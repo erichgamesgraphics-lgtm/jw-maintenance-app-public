@@ -1,0 +1,148 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email == 'erichgamesgraphics@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isBootstrappedAdmin() ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isCoordinator() {
+      return isAdmin() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordinator'
+      );
+    }
+
+    // Admins registry
+    match /admins/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin() || isBootstrappedAdmin();
+    }
+
+    // Users
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId && (
+        incoming().role == 'brother' || isAdmin() || isBootstrappedAdmin()
+      );
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (request.auth.uid == userId && incoming().role == existing().role)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Halls / Locations
+    match /halls/{hallId} {
+      allow read: if isSignedIn();
+      allow create, update: if isCoordinator() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Maintenance Categories
+    match /categories/{categoryId} {
+      allow read: if isSignedIn();
+      allow create, update: if isCoordinator() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Assignments
+    match /assignments/{assignmentId} {
+      allow get: if isSignedIn() && (
+        isAdmin() ||
+        isCoordinator() ||
+        (resource.data.assignedUserIds is list && request.auth.uid in resource.data.assignedUserIds)
+      );
+      allow list: if isSignedIn();
+      allow create: if isCoordinator() || isAdmin();
+      allow update: if isSignedIn() && (
+        isCoordinator() ||
+        isAdmin() ||
+        (
+          resource.data.assignedUserIds is list &&
+          request.auth.uid in resource.data.assignedUserIds &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'completionNotes', 'completionPhotos', 'checklist', 'updatedAt'])
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Individual brother responses
+    match /assignment_responses/{responseId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        isCoordinator() ||
+        resource.data.userId == request.auth.uid
+      );
+      allow create, update: if isSignedIn() && (
+        request.auth.uid == incoming().userId ||
+        isCoordinator() ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Immutable Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if isCoordinator() || isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // App Settings
+    match /app_settings/{settingId} {
+      allow read: if isSignedIn();
+      allow create, update: if isCoordinator() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Test connection doc
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+  }
+}

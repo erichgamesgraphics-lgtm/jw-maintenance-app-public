@@ -1,0 +1,180 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with role-based access information, qualifications, and congregation assignment.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["admin", "coordinator", "brother"] },
+        "phone": { "type": "string", "maxLength": 32 },
+        "congregation": { "type": "string", "maxLength": 128 },
+        "qualifications": { "type": "array" },
+        "hallId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "displayName", "role"]
+    },
+    "Hall": {
+      "title": "Kingdom Hall Location",
+      "description": "Details about a physical Kingdom Hall facility.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 128 },
+        "address": { "type": "string", "maxLength": 256 },
+        "timezone": { "type": "string", "maxLength": 64 },
+        "congregations": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "address"]
+    },
+    "Assignment": {
+      "title": "Maintenance Assignment",
+      "description": "A scheduled or on-demand maintenance task assigned to one or more brothers.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 4000 },
+        "category": { "type": "string", "maxLength": 64 },
+        "hallId": { "type": "string", "maxLength": 128 },
+        "assignedUserIds": { "type": "array" },
+        "createdBy": { "type": "string", "maxLength": 128 },
+        "scheduledDate": { "type": "string", "maxLength": 32 },
+        "scheduledTime": { "type": "string", "maxLength": 32 },
+        "deadline": { "type": "string", "maxLength": 32 },
+        "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"] },
+        "checklist": { "type": "array" },
+        "referencePhotos": { "type": "array" },
+        "instructions": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["draft", "assigned", "accepted", "in_progress", "completed", "reviewed", "cancelled", "reassigned"] },
+        "completionNotes": { "type": "string", "maxLength": 2000 },
+        "completionPhotos": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "category", "hallId", "createdBy", "priority", "status"]
+    },
+    "AssignmentResponse": {
+      "title": "Assignment Response",
+      "description": "An individual brother's response (accept/decline) to an assignment.",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "reason": { "type": "string", "maxLength": 500 },
+        "respondedAt": { "type": "string" }
+      },
+      "required": ["assignmentId", "userId", "userName", "status"]
+    },
+    "Notification": {
+      "title": "In-app Notification",
+      "description": "Notification sent to a brother or coordinator regarding maintenance updates.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 128 },
+        "message": { "type": "string", "maxLength": 500 },
+        "type": { "type": "string", "enum": ["assignment", "accepted", "declined", "status_change", "announcement", "reminder"] },
+        "assignmentId": { "type": "string", "maxLength": 128 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "message", "type", "read"]
+    },
+    "Category": {
+      "title": "Maintenance Category",
+      "description": "System or user-defined maintenance category (e.g. HVAC, Electrical, Cleaning).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 64 },
+        "description": { "type": "string", "maxLength": 256 },
+        "color": { "type": "string", "maxLength": 32 },
+        "requiredQualifications": { "type": "array" },
+        "order": { "type": "number" }
+      },
+      "required": ["name"]
+    },
+    "AuditLog": {
+      "title": "Audit Log Record",
+      "description": "Immutable historical audit log of workflow actions.",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string", "maxLength": 128 },
+        "actorId": { "type": "string", "maxLength": 128 },
+        "actorName": { "type": "string", "maxLength": 128 },
+        "actorRole": { "type": "string", "maxLength": 64 },
+        "action": { "type": "string", "maxLength": 64 },
+        "details": { "type": "string", "maxLength": 1000 },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["actorId", "actorName", "action", "timestamp"]
+    },
+    "AppSetting": {
+      "title": "Application Setting",
+      "description": "Congregation hall maintenance configuration settings.",
+      "type": "object",
+      "properties": {
+        "hallName": { "type": "string", "maxLength": 128 },
+        "defaultTimezone": { "type": "string", "maxLength": 64 },
+        "autoRemindersEnabled": { "type": "boolean" },
+        "allowBrotherPhotoUploads": { "type": "boolean" },
+        "contactPerson": { "type": "string", "maxLength": 128 },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["hallName"]
+    },
+    "Admin": {
+      "title": "Admin Permission Record",
+      "description": "Designates an authenticated user as an administrator.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 256 },
+        "addedAt": { "type": "string" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "User" },
+      "description": "User profiles with roles and qualifications."
+    },
+    "/halls/{hallId}": {
+      "schema": { "$ref": "Hall" },
+      "description": "Kingdom Hall facility records."
+    },
+    "/assignments/{assignmentId}": {
+      "schema": { "$ref": "Assignment" },
+      "description": "Maintenance assignments with full lifecycle tracking."
+    },
+    "/assignment_responses/{responseId}": {
+      "schema": { "$ref": "AssignmentResponse" },
+      "description": "Per-brother response records for assignments."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "Notification" },
+      "description": "In-app notifications."
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "Category" },
+      "description": "Maintenance categories."
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "AuditLog" },
+      "description": "Audit trail entries."
+    },
+    "/app_settings/{settingId}": {
+      "schema": { "$ref": "AppSetting" },
+      "description": "Application settings and options."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "Admin" },
+      "description": "Admin privileges map."
+    }
+  }
+}

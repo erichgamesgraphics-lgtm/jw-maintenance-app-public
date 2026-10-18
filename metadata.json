@@ -1,0 +1,6 @@
+{
+  "name": "Kingdom Hall Maintenance Hub",
+  "description": "Production-minded maintenance management system for organizing Kingdom Hall maintenance assignments, schedules, and checklists.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
